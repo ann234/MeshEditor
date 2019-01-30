@@ -20,7 +20,7 @@ GLuint LoadShaders(const char* vertex_file_path, const char* fragment_file_path)
 		VertexShaderStream.close();
 	}
 	else {
-		printf("파일 %s 를 읽을 수 없음. 정확한 디렉토리를 사용 중입니까 ? FAQ 를 우선 읽어보는 걸 잊지 마세요!\n", vertex_file_path);
+		printf("파일 %s 를 읽을 수 없음. 정확한 디렉토리를 사용 중입니까?\n", vertex_file_path);
 		getchar();
 		return 0;
 	}

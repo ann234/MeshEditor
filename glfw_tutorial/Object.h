@@ -50,14 +50,6 @@ public:
 	void draw_object(glm::vec3 position, bool is_wire, shader_info shader);
 };
 
-class hw1
-{
-private:
-	double x, y;
-
-	hw1() : x{ 0 }, y{ 0 } {}
-};
-
 struct shader_info
 {
 	shader_info() {}

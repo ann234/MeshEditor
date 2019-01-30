@@ -4,10 +4,10 @@
 #include <direct.h>
 GLFWwindow* window;
 
-std::vector<glm::vec3> vertex_buffer_data_bunny;
-std::vector<glm::vec3> color_buffer_data_bunny;
-std::vector<glm::vec3> normal_buffer_data_bunny;
-std::vector<unsigned int> index_buffer_data_bunny;
+std::vector<glm::vec3> vertex_buffer_data_temp;
+std::vector<glm::vec3> color_buffer_data_temp;
+std::vector<glm::vec3> normal_buffer_data_temp;
+std::vector<unsigned int> index_buffer_data_temp;
 
 object_manager obj_man;
 
@@ -16,7 +16,7 @@ std::vector<GLuint> vertex_buffer;
 GLuint color_buffer[4];
 GLuint index_buffer;
 GLuint normal_buffer;
-MyMesh mesh_bunny;
+MyMesh mesh_temp;
 
 GLuint programID_normal;
 GLuint programID_phong;
@@ -139,10 +139,13 @@ int main()
 	//	OpenMesh initialize
 	char* c_curDirPath = (char*)malloc(sizeof(char) * 1000);
 	_getcwd(c_curDirPath, 1000);
-	std::string curDirPath = c_curDirPath + std::string("\\mesh_models\\torus.off");
+	std::string input_mesh; float mesh_scale;
+	std::cout << "Input mesh file name:";	std::cin >> input_mesh;
+	std::cout << "Input mesh scale:";		std::cin >> mesh_scale;
+	std::string curDirPath = c_curDirPath + std::string("\\mesh_models\\" + input_mesh);
 	std::cout << "Mesh: " << curDirPath.c_str() << std::endl;
-	mesh_bunny = readOffModel(curDirPath, vertex_buffer_data_bunny,
-		color_buffer_data_bunny, normal_buffer_data_bunny, index_buffer_data_bunny, 0.01f);
+	mesh_temp = readOffModel(curDirPath, vertex_buffer_data_temp,
+		color_buffer_data_temp, normal_buffer_data_temp, index_buffer_data_temp, mesh_scale);
 
 	if (!glfwInit())
 	{
@@ -232,7 +235,7 @@ void init()
 
 	//	bunny.off
 	glBindBuffer(GL_ARRAY_BUFFER, obj_man.vertex_buffer_ids[2]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_buffer_data_bunny.size() * sizeof(glm::vec3), &vertex_buffer_data_bunny[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_buffer_data_temp.size() * sizeof(glm::vec3), &vertex_buffer_data_temp[0], GL_STATIC_DRAW);
 
 	//	Generate color buffer
 	add_buffer_id(3, obj_man.color_buffer_ids);
@@ -244,17 +247,17 @@ void init()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data_tri), g_color_buffer_data_tri, GL_STATIC_DRAW);
 	//	bunny
 	glBindBuffer(GL_ARRAY_BUFFER, obj_man.color_buffer_ids[2]);
-	glBufferData(GL_ARRAY_BUFFER, color_buffer_data_bunny.size() * sizeof(glm::vec3), &color_buffer_data_bunny[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, color_buffer_data_temp.size() * sizeof(glm::vec3), &color_buffer_data_temp[0], GL_STATIC_DRAW);
 
 	//	Generate normal buffer
 	glGenBuffers(1, &normal_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
-	glBufferData(GL_ARRAY_BUFFER, normal_buffer_data_bunny.size() * sizeof(glm::vec3), &normal_buffer_data_bunny[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, normal_buffer_data_temp.size() * sizeof(glm::vec3), &normal_buffer_data_temp[0], GL_STATIC_DRAW);
 
 	//	Generate index buffer
 	glGenBuffers(1, &index_buffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_data_bunny.size() * sizeof(unsigned int), &index_buffer_data_bunny[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_data_temp.size() * sizeof(unsigned int), &index_buffer_data_temp[0], GL_STATIC_DRAW);
 
 	std::vector<glm::vec3> cube_vtx;
 	for (int i = 0; i < sizeof(g_vertex_buffer_data) / sizeof(GLfloat); i += 3)
@@ -273,19 +276,19 @@ void init()
 
 	/*for (int i = 0; i < 5; i++)
 	{
-		MeshObject* obj = new MeshObject(obj_man, vertex_buffer_data_bunny,
-			color_buffer_data_bunny,
-			normal_buffer_data_bunny,
-			index_buffer_data_bunny,
-			mesh_bunny);
+		MeshObject* obj = new MeshObject(obj_man, vertex_buffer_data_temp,
+			color_buffer_data_temp,
+			normal_buffer_data_temp,
+			index_buffer_data_temp,
+			mesh_temp);
 		obj_man.objects.push_back(obj);
 	}*/
 
-	MeshObject* obj = new MeshObject(obj_man, vertex_buffer_data_bunny,
-		color_buffer_data_bunny,
-		normal_buffer_data_bunny,
-		index_buffer_data_bunny,
-		mesh_bunny);
+	MeshObject* obj = new MeshObject(obj_man, vertex_buffer_data_temp,
+		color_buffer_data_temp,
+		normal_buffer_data_temp,
+		index_buffer_data_temp,
+		mesh_temp);
 	obj_man.objects.push_back(obj);
 
 	programID_phong = LoadShaders("PhongVert.vert", "PhongFrag.frag");
@@ -344,7 +347,7 @@ void drawBunny(bool is_wire = false)
 		glUniform1i(curr_shader.is_wire_id, 1);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		{
-			glDrawElements(GL_TRIANGLES, index_buffer_data_bunny.size(), GL_UNSIGNED_INT, (void*)0);
+			glDrawElements(GL_TRIANGLES, index_buffer_data_temp.size(), GL_UNSIGNED_INT, (void*)0);
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
@@ -355,7 +358,7 @@ void drawBunny(bool is_wire = false)
 		glPolygonOffset(1, 1);
 		glEnable(GL_POLYGON_OFFSET_FILL);
 		{
-			glDrawElements(GL_TRIANGLES, index_buffer_data_bunny.size(), GL_UNSIGNED_INT, (void*)0);
+			glDrawElements(GL_TRIANGLES, index_buffer_data_temp.size(), GL_UNSIGNED_INT, (void*)0);
 		}
 		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
@@ -474,7 +477,7 @@ void render_UI()
 	font_manager::render_text("Delete : C", 12.0f, init_height - 3 * s_h_interval, 0.3f, glm::vec3(0.2, 0.2, 0.2));
 	font_manager::render_text("Breadth first search : B", 12.0f, init_height - 4 * s_h_interval, 0.3f, glm::vec3(0.2, 0.2, 0.2));
 	font_manager::render_text("Turn on/off phong shading : P", 12.0f, init_height - 5 * s_h_interval, 0.3f, glm::vec3(0.2, 0.2, 0.2));
-	font_manager::render_text("Camera moving : Press Left mouse button + (WASD, QE)", 12.0f, init_height - 6.3 * s_h_interval, 0.3f, glm::vec3(0.2, 0.2, 0.2));
+	font_manager::render_text("Camera moving : Press right mouse button + (WASD, QE)", 12.0f, init_height - 6.3 * s_h_interval, 0.3f, glm::vec3(0.2, 0.2, 0.2));
 
 	std::string curr_select_mode;
 	if (is_vertex_or_face)
@@ -522,10 +525,6 @@ void mouse_input()
 	{
 		is_leftmouse_down = false;
 	}
-}
-
-void change_window()
-{
 }
 
 void computeMatrices()
