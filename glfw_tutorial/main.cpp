@@ -8,6 +8,7 @@ std::vector<glm::vec3> vertex_buffer_data_temp;
 std::vector<glm::vec3> color_buffer_data_temp;
 std::vector<glm::vec3> normal_buffer_data_temp;
 std::vector<unsigned int> index_buffer_data_temp;
+MyMesh mesh_temp;
 
 object_manager obj_man;
 
@@ -16,7 +17,10 @@ std::vector<GLuint> vertex_buffer;
 GLuint color_buffer[4];
 GLuint index_buffer;
 GLuint normal_buffer;
-MyMesh mesh_temp;
+
+void drawTriangle();
+void drawCube(glm::vec3 pos);
+void drawBunny(bool is_wire);
 
 GLuint programID_normal;
 GLuint programID_phong;
@@ -317,123 +321,6 @@ void init()
 	font_manager::load_font((GLfloat)width, (GLfloat)height);
 }
 
-void drawBunny(bool is_wire = false)
-{
-	//	model_matrix matrix
-	glm::mat4 model_matrix = glm::translate(glm::mat4(), bunny_pos);
-	//model_matrix = glm::mat4(1.0f);
-	//	Send to the currently bound shader, in the "M" uniform
-	glUniformMatrix4fv(curr_shader.model_id, 1, GL_FALSE, &model_matrix[0][0]);
-
-	//	MVP matrix
-	glm::mat4 mvp_matrix = object_manager::projection_matrix * object_manager::view_matrix * model_matrix; // * position
-	//	Send to the currently bound shader, in the "MVP" uniform
-	glUniformMatrix4fv(curr_shader.mvp_id, 1, GL_FALSE, &mvp_matrix[0][0]);
-
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, obj_man.vertex_buffer_ids[2]);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, obj_man.color_buffer_ids[2]);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-	glEnableVertexAttribArray(2);
-	glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-	if (is_wire)
-	{
-		glUniform1i(curr_shader.is_wire_id, 1);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		{
-			glDrawElements(GL_TRIANGLES, index_buffer_data_temp.size(), GL_UNSIGNED_INT, (void*)0);
-		}
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	}
-	else
-	{
-		glUniform1i(curr_shader.is_wire_id, 0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-		glPolygonOffset(1, 1);
-		glEnable(GL_POLYGON_OFFSET_FILL);
-		{
-			glDrawElements(GL_TRIANGLES, index_buffer_data_temp.size(), GL_UNSIGNED_INT, (void*)0);
-		}
-		glDisable(GL_POLYGON_OFFSET_FILL);
-	}
-}
-
-void drawCube(glm::vec3 pos)
-{
-	//	model_matrix matrix
-	glm::mat4 model_matrix = glm::translate(glm::mat4(), pos);
-	//	Send to the currently bound shader, in the "M" uniform
-	glUniformMatrix4fv(curr_shader.model_id, 1, GL_FALSE, &model_matrix[0][0]);
-
-	//	MVP matrix
-	glm::mat4 mvp = object_manager::projection_matrix * object_manager::view_matrix * model_matrix; // * position
-	//	Send to the currently bound shader, in the "MVP" uniform
-	glUniformMatrix4fv(curr_shader.mvp_id, 1, GL_FALSE, &mvp[0][0]);
-
-	// 1nd attribute buffer : vertice
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, obj_man.vertex_buffer_ids[0]);
-	glVertexAttribPointer(
-		0,
-		3,
-		GL_FLOAT,
-		GL_FALSE,
-		0,
-		(void*)0
-	);
-	// 2nd attribute buffer : colors
-	//glEnableVertexAttribArray(1);
-	//glBindBuffer(GL_ARRAY_BUFFER, obj_man.color_buffer_ids[0]);
-	//glVertexAttribPointer(
-	//	1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-	//	3,                                // size
-	//	GL_FLOAT,                         // type
-	//	GL_FALSE,                         // normalized?
-	//	0,                                // stride
-	//	(void*)0                          // array buffer offset
-	//);
-	glDrawArrays(GL_TRIANGLES, 0, 12 * 3);
-}
-
-void drawTriangle()
-{
-	//	model_matrix matrix for triangle
-	glm::mat4 model_matrix = glm::translate(glm::mat4(), glm::vec3(1, 0, 0));
-	//	MVP matrix for triangle
-	glm::mat4 mvp = object_manager::projection_matrix * object_manager::view_matrix * model_matrix; // * position
-												 //	Send to the currently bound shader, in the "MVP" uniform
-	glUniformMatrix4fv(curr_shader.mvp_id, 1, GL_FALSE, &mvp[0][0]);
-
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, obj_man.vertex_buffer_ids[1]);
-	glVertexAttribPointer(
-		0,
-		3,
-		GL_FLOAT,
-		GL_FALSE,
-		0,
-		(void*)0
-	);
-	// 2nd attribute buffer : colors
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, obj_man.color_buffer_ids[1]);
-	glVertexAttribPointer(
-		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-		3,                                // size
-		GL_FLOAT,                         // type
-		GL_FALSE,                         // normalized?
-		0,                                // stride
-		(void*)0                          // array buffer offset
-	);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-}
-
 void render_objects()
 {
 	glDisable(GL_CULL_FACE);
@@ -447,10 +334,6 @@ void render_objects()
 	{
 		glUseProgram(programID_normal);
 	}
-
-	double xpos, ypos;
-	glfwGetCursorPos(window, &xpos, &ypos);
-	drawCube(camera_pos + get_ray_by_window(width, height, xpos, ypos) * 0.5f);
 
 	/*for (int i = 0; i < obj_man.objects.size(); i++)
 	{
@@ -666,4 +549,121 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			break;
 		}
 	}
+}
+
+void drawBunny(bool is_wire = false)
+{
+	//	model_matrix matrix
+	glm::mat4 model_matrix = glm::translate(glm::mat4(), bunny_pos);
+	//model_matrix = glm::mat4(1.0f);
+	//	Send to the currently bound shader, in the "M" uniform
+	glUniformMatrix4fv(curr_shader.model_id, 1, GL_FALSE, &model_matrix[0][0]);
+
+	//	MVP matrix
+	glm::mat4 mvp_matrix = object_manager::projection_matrix * object_manager::view_matrix * model_matrix; // * position
+	//	Send to the currently bound shader, in the "MVP" uniform
+	glUniformMatrix4fv(curr_shader.mvp_id, 1, GL_FALSE, &mvp_matrix[0][0]);
+
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, obj_man.vertex_buffer_ids[2]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, obj_man.color_buffer_ids[2]);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	if (is_wire)
+	{
+		glUniform1i(curr_shader.is_wire_id, 1);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		{
+			glDrawElements(GL_TRIANGLES, index_buffer_data_temp.size(), GL_UNSIGNED_INT, (void*)0);
+		}
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+	else
+	{
+		glUniform1i(curr_shader.is_wire_id, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+		glPolygonOffset(1, 1);
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		{
+			glDrawElements(GL_TRIANGLES, index_buffer_data_temp.size(), GL_UNSIGNED_INT, (void*)0);
+		}
+		glDisable(GL_POLYGON_OFFSET_FILL);
+	}
+}
+
+void drawCube(glm::vec3 pos)
+{
+	//	model_matrix matrix
+	glm::mat4 model_matrix = glm::translate(glm::mat4(), pos);
+	//	Send to the currently bound shader, in the "M" uniform
+	glUniformMatrix4fv(curr_shader.model_id, 1, GL_FALSE, &model_matrix[0][0]);
+
+	//	MVP matrix
+	glm::mat4 mvp = object_manager::projection_matrix * object_manager::view_matrix * model_matrix; // * position
+	//	Send to the currently bound shader, in the "MVP" uniform
+	glUniformMatrix4fv(curr_shader.mvp_id, 1, GL_FALSE, &mvp[0][0]);
+
+	// 1nd attribute buffer : vertice
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, obj_man.vertex_buffer_ids[0]);
+	glVertexAttribPointer(
+		0,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		0,
+		(void*)0
+	);
+	// 2nd attribute buffer : colors
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, obj_man.color_buffer_ids[0]);
+	glVertexAttribPointer(
+		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+	glDrawArrays(GL_TRIANGLES, 0, 12 * 3);
+}
+
+void drawTriangle()
+{
+	//	model_matrix matrix for triangle
+	glm::mat4 model_matrix = glm::translate(glm::mat4(), glm::vec3(1, 0, 0));
+	//	MVP matrix for triangle
+	glm::mat4 mvp = object_manager::projection_matrix * object_manager::view_matrix * model_matrix; // * position
+												 //	Send to the currently bound shader, in the "MVP" uniform
+	glUniformMatrix4fv(curr_shader.mvp_id, 1, GL_FALSE, &mvp[0][0]);
+
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, obj_man.vertex_buffer_ids[1]);
+	glVertexAttribPointer(
+		0,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		0,
+		(void*)0
+	);
+	// 2nd attribute buffer : colors
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, obj_man.color_buffer_ids[1]);
+	glVertexAttribPointer(
+		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 }

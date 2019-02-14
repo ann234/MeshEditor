@@ -24,10 +24,12 @@ glm::vec3 get_ray_by_window(GLfloat width, GLfloat height, const float xpos, con
 	return ray_wor;
 }
 
+
+
 MeshObject* ray_casting(GLFWwindow* window, std::vector<MeshObject*> objects, 
 	bool is_vertex_or_face, bool is_delete_or_search)
 {
-	std::cout << "Ray casting starts" << std::endl;
+	//std::cout << "Ray casting starts" << std::endl;
 
 	//	Get mouse position
 	//	2d Viewport Coordinate
@@ -80,7 +82,7 @@ MeshObject* ray_casting(GLFWwindow* window, std::vector<MeshObject*> objects,
 		}
 		if (is_found)
 		{
-			std::cout << "picked: " << nearest_distance << std::endl;
+			//std::cout << "picked: " << nearest_distance << std::endl;
 			if (is_delete_or_search)
 			{
 				delete_vertex(*nearest_obj, nearest_vertex);
@@ -156,7 +158,7 @@ MeshObject* ray_casting(GLFWwindow* window, std::vector<MeshObject*> objects,
 		}
 		if (is_found)	//	가장 가까운 triangle을 찾으면 종료
 		{
-			std::cout << "picked: " << nearest_distance << std::endl;
+			//std::cout << "picked: " << nearest_distance << std::endl;
 			if (is_delete_or_search)
 			{
 				delete_face(*nearest_obj, nearest_face);
